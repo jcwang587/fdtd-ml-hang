@@ -5,11 +5,11 @@ from xgboost import XGBRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 
 # Load the data
-data = pd.read_csv("ml-pillar.csv")
+data = pd.read_csv("./csv_data/dataset.csv")
 
 # Separate features and target variable
-X = data.drop(["wavelength", "E", "Q"], axis=1)
-y = data["E"]
+X = data.iloc[:, :-1]
+y = data["fe"]
 
 # Standardizing the features
 scaler = StandardScaler()
