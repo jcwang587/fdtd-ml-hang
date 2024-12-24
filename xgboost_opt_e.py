@@ -4,6 +4,10 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 
+# fix all the random seeds
+import random
+random.seed(42)
+
 # Load the data
 data = pd.read_csv("./csv_data/dataset.csv")
 
@@ -18,7 +22,7 @@ X_scaled = scaler.fit_transform(X)
 # Splitting the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
     # X_scaled, y, test_size=0.1, random_state=2546
-    X_scaled, y, test_size=0.1, random_state=2737
+    X_scaled, y, test_size=0.1, random_state=42
 )
 
 # Creating the XGBRegressor model
@@ -28,9 +32,9 @@ from sklearn.model_selection import GridSearchCV
 
 # Define the parameter grid
 param_grid = {
-    'n_estimators': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+    'n_estimators': [100, 400, 700, 1000, 1300, 1600, 1900],
     'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    'learning_rate': [0.001, 0.002, 0.005, 0.01, 0.015, 0.02],
+    'learning_rate': [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
 }
 
 # Set up the grid search
@@ -113,27 +117,23 @@ plt.tight_layout()
 plt.savefig("./shap_summary_E.png", dpi=1200, format="png")
 plt.close()
 
+# Identify the features to exclude
+features_to_exclude = ["em", "qe"]
+idx_to_exclude = [list(X.columns).index(feature) for feature in features_to_exclude]
 
-# 2. Identify the name or index of the feature you want to exclude
-feature_to_exclude = "em"  # <-- Replace with the actual feature name
+# Modify the arrays to exclude multiple features
+shap_values_excl = shap_values[:, [i for i in range(shap_values.shape[1]) if i not in idx_to_exclude]]
+X_train_excl = X_train[:, [i for i in range(X_train.shape[1]) if i not in idx_to_exclude]]
 
-# 3. Get the index of this feature in the dataframe
-#    If the feature is guaranteed to be in X.columns
-idx_to_exclude = list(X.columns).index(feature_to_exclude)
-
-# 4. Create new arrays that exclude that feature's column
-shap_values_excl = shap_values[:, [i for i in range(shap_values.shape[1]) if i != idx_to_exclude]]
-X_train_excl = X_train.iloc[:, [i for i in range(X_train.shape[1]) if i != idx_to_exclude]]
-
-# 5. Plot a new SHAP summary plot using the reduced SHAP arrays
+# Plot a new SHAP summary plot using the reduced SHAP arrays
 shap.summary_plot(
     shap_values_excl,
     X_train_excl,
-    feature_names=[col for col in X.columns if col != feature_to_exclude],  # or X_train_excl.columns
+    feature_names=[col for col in X.columns if col not in features_to_exclude],
     show=False
 )
 
-# 6. Optionally style the plot as you wish
+# Optionally style the plot as you wish
 fig, ax = plt.gcf(), plt.gca()
 fig.set_size_inches(6, 4)
 
@@ -148,15 +148,9 @@ ax.spines['left'].set_linewidth(1.5)
 plt.xticks(fontsize=15)
 plt.yticks(fontsize=15)
 
-# Adjust the size of the colorbar label and tick labels
 fig.axes[-1].yaxis.label.set_size(15)
 fig.axes[-1].set_yticklabels([tick.get_text() for tick in fig.axes[-1].get_yticklabels()], fontsize=15)
-
-# 7. Add a label in the bottom corner (just as an example)
-plt.text(28, 0.1, "E", fontsize=15)
-
 plt.tight_layout()
 
-# 8. Save the new plot
 plt.savefig("./shap_summary_E_noTopFeature.png", dpi=1200, format="png")
 plt.close()
