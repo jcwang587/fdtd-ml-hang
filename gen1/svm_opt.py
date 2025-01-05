@@ -75,4 +75,4 @@ rf_res.to_csv('./csv_data/svr_opt_res.csv', index=False)
 
 # save the model
 import pickle
-pickle.dump(svr, open('./model_output/svr_opt_model.pkl', 'wb'))
+pickle.dump(svr, open('model_output/svr_opt_model.pkl', 'wb'))
