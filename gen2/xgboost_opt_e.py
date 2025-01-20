@@ -9,7 +9,7 @@ import random
 random.seed(42)
 
 # Load the data
-data = pd.read_csv("csv_data/dataset.csv")
+data = pd.read_csv("data/fe_merged.csv")
 
 # Separate features and target variable
 X = data.iloc[:, :-1]

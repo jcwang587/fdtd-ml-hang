@@ -44,5 +44,14 @@ factor_wide_format = factor_long_format.pivot_table(
 # Merge the new data with fe_long_format based on Diameter
 fe_merged = fe_long_format.merge(factor_wide_format, on="Diameter", how="left")
 
+# Change Distance to distance and Diameter to diameter
+fe_merged.rename(columns={"Distance": "distance", "Diameter": "diameter", "Fe": "fe"}, inplace=True)
+
+# Put fe the last column
+fe_merged = fe_merged[["distance", "diameter", "abs", "sca", "plasmon", "fe"]]
+
+# Output the merged data to a CSV file
+fe_merged.to_csv('data/fe_merged.csv', index=False)
+
 
 
