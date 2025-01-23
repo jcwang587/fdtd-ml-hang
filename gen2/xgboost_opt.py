@@ -12,17 +12,12 @@ random.seed(42)
 data = pd.read_csv("data/fe_merged.csv")
 
 # Separate features and target variable
-X = data.iloc[:, :-1]
+X = data[["distance", "abs", "sca", "plasmon"]]
 y = data["fe"]
-
-# Standardizing the features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
 
 # Splitting the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    # X_scaled, y, test_size=0.1, random_state=2546
-    X_scaled, y, test_size=0.1, random_state=42
+    X, y, test_size=0.1, random_state=42
 )
 
 # Creating the XGBRegressor model
@@ -31,10 +26,16 @@ xgb_model = XGBRegressor()
 from sklearn.model_selection import GridSearchCV
 
 # Define the parameter grid
+# param_grid = {
+#     'n_estimators': [100, 400, 700, 1000, 1300, 1600, 1900],
+#     'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+#     'learning_rate': [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
+# }
+
 param_grid = {
-    'n_estimators': [100, 400, 700, 1000, 1300, 1600, 1900],
-    'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    'learning_rate': [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
+    'n_estimators': [1000],
+    'max_depth': [4],
+    'learning_rate': [0.01],
 }
 
 # Set up the grid search
@@ -86,9 +87,9 @@ plt.close()
 import shap
 
 explainer = shap.TreeExplainer(optimized_xgb_model)
-shap_values = explainer.shap_values(X_train)
+shap_values = explainer.shap_values(X)
 
-shap.summary_plot(shap_values, X_train, show=False, feature_names=X.columns)
+shap.summary_plot(shap_values, X, show=False, feature_names=X.columns)
 
 fig, ax = plt.gcf(), plt.gca()
 fig.set_size_inches(6, 4)
@@ -110,9 +111,10 @@ fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
 for label in ax.get_yticklabels():
     label.set_fontsize(15)
 
-# add text in the right bottom corner
-plt.text(28, 0.1, "E", fontsize=15)
-
 plt.tight_layout()
-plt.savefig("./shap_summary_E.png", dpi=1200, format="png")
+plt.savefig("./shap_summary_E.png", dpi=600, format="png")
+plt.close()
+
+sns.heatmap(X.corr(), annot=True, cmap="coolwarm")
+plt.savefig("./corr_matrix.png", dpi=600, format="png")
 plt.close()
