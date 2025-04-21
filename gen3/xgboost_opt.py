@@ -1,9 +1,12 @@
 import random
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
+import shap
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV, train_test_split
 from xgboost import XGBRegressor
 
 random.seed(42)
@@ -23,7 +26,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 # Creating the XGBRegressor model
 xgb_model = XGBRegressor()
 
-from sklearn.model_selection import GridSearchCV
 
 # Define the parameter grid
 # param_grid = {
@@ -67,30 +69,23 @@ mse_optimized = mean_squared_error(y_test, y_pred_optimized)
 print(f"R2 on test set for E: {r2_optimized:.4f}, MSE: {mse_optimized:.4f}")
 
 # Plot the parity plot
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set()
-
 plt.figure(figsize=(8, 8))
 plt.scatter(y_test, y_pred_optimized, s=150)
 plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], "k--")
-plt.xlabel("Actual E", fontsize=32)
-plt.ylabel("Predicted E", fontsize=32)
+plt.xlabel("Actual FE", fontsize=32)
+plt.ylabel("Predicted FE", fontsize=32)
 plt.title(
-    "Single-Target XGBoost Prediction for E\n$R^2$: {:.3f}, MSE: {:.3f}".format(
+    "XGBoost Prediction for FE\n$R^2$: {:.3f}, MSE: {:.3f}".format(
         r2_optimized, mse_optimized
     ),
     fontsize=24,
 )
 plt.xticks(fontsize=24)
 plt.yticks(fontsize=24)
-plt.savefig("./parity_plot_E.svg", dpi=1200, format="svg")
+plt.savefig("./parity_plot_FE.png", dpi=600, format="png")
 plt.close()
 
 # shapley values
-import shap
-
 explainer = shap.TreeExplainer(optimized_xgb_model)
 shap_values = explainer.shap_values(X)
 
@@ -120,6 +115,15 @@ plt.tight_layout()
 plt.savefig("./shap_summary_E.png", dpi=600, format="png")
 plt.close()
 
-sns.heatmap(X.corr(), annot=True, cmap="coolwarm")
+# Create a mask for the upper triangle
+mask = np.triu(np.ones_like(X.corr(), dtype=bool))
+
+# Round correlation values to 2 decimal places and set very small values to 0
+corr_matrix = X.corr()
+corr_matrix = np.round(corr_matrix, 2)
+corr_matrix[np.abs(corr_matrix) < 0.01] = 0
+
+# Plot the correlation matrix with the mask
+sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", mask=mask, fmt=".2f")
 plt.savefig("./corr_matrix.png", dpi=600, format="png")
 plt.close()
