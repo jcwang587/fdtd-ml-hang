@@ -12,7 +12,7 @@ random.seed(42)
 data = pd.read_csv("data/fe_merged.csv")
 
 # Separate features and target variable
-X = data[["distance", "abs", "sca", "plasmon"]]
+X = data.drop(columns=["fe"])
 y = data["fe"]
 
 # Splitting the data into training and testing sets
