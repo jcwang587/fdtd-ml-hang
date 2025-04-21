@@ -94,78 +94,8 @@ explainer = shap.TreeExplainer(optimized_xgb_model)
 shap_values = explainer.shap_values(X_scaled)
 
 # Get indices of the features we want to plot
-feature_indices_1 = [X_scaled.columns.get_loc(col) for col in ["em", "distance", "spectra_overlap", "sca_abs"]]
 
 # SHAP plot 1: Create a new SHAP summary plot with selected features
-shap.summary_plot(
-    shap_values[:, feature_indices_1],
-    X_scaled[["em", "distance", "spectra_overlap", "sca_abs"]],
-    show=False,
-    feature_names=["em", "distance", "spectra_overlap", "sca_abs"]
-)
-
-fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(6, 4)
-
-ax.set_xlabel("SHAP value", fontsize=15)
-ax.spines["right"].set_visible(True)
-ax.spines["left"].set_visible(True)
-ax.spines["top"].set_visible(True)
-ax.spines["right"].set_linewidth(1.5)
-ax.spines["top"].set_linewidth(1.5)
-ax.spines["bottom"].set_linewidth(1.5)
-ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
-
-for label in ax.get_yticklabels():
-    label.set_fontsize(15)
-
-plt.tight_layout()
-plt.savefig("./shap_summary_em_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
-plt.close()
-
-
-# SHAP plot 2: Create a SHAP dependence plot for the selected features
-# Get indices for the three features we want to plot
-feature_indices_2 = [X_scaled.columns.get_loc(col) for col in ["distance", "spectra_overlap", "sca_abs"]]
-
-shap.summary_plot(
-    shap_values[:, feature_indices_2],
-    X_scaled[["distance", "spectra_overlap", "sca_abs"]],
-    show=False,
-    feature_names=["distance", "spectra_overlap", "sca_abs"]
-)
-
-fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(6, 4)
-
-ax.set_xlabel("SHAP value", fontsize=15)
-ax.spines["right"].set_visible(True)
-ax.spines["left"].set_visible(True)
-ax.spines["top"].set_visible(True)
-ax.spines["right"].set_linewidth(1.5)
-ax.spines["top"].set_linewidth(1.5)
-ax.spines["bottom"].set_linewidth(1.5)
-ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
-
-for label in ax.get_yticklabels():
-    label.set_fontsize(15)
-
-plt.tight_layout()
-plt.savefig("./shap_summary_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
-plt.close()
-
-
-# SHAP plot 3: Create a SHAP summary plot for all features
 shap.summary_plot(
     shap_values,
     X_scaled,
@@ -194,7 +124,7 @@ for label in ax.get_yticklabels():
     label.set_fontsize(15)
 
 plt.tight_layout()
-plt.savefig("./shap_summary_all_features.png", dpi=600, format="png")
+plt.savefig("./shap_summary.png", dpi=600, format="png")
 plt.close()
 
 # Create a mask for the upper triangle
