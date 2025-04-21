@@ -7,6 +7,7 @@ import seaborn as sns
 import shap
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
 random.seed(42)
@@ -18,14 +19,17 @@ data = pd.read_csv("data/fe_merged.csv")
 X = data.drop(columns=["fe"])
 y = data["fe"]
 
+# Normalize the features
+scaler = StandardScaler()
+X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+
 # Splitting the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.1, random_state=42
+    X_scaled, y, test_size=0.1, random_state=42
 )
 
 # Creating the XGBRegressor model
 xgb_model = XGBRegressor()
-
 
 # Define the parameter grid
 # param_grid = {
@@ -87,9 +91,18 @@ plt.close()
 
 # shapley values
 explainer = shap.TreeExplainer(optimized_xgb_model)
-shap_values = explainer.shap_values(X)
+shap_values = explainer.shap_values(X_scaled)
 
-shap.summary_plot(shap_values, X, show=False, feature_names=X.columns)
+# Get indices of the features we want to plot
+feature_indices_1 = [X_scaled.columns.get_loc(col) for col in ["em", "distance", "spectra_overlap", "sca_abs"]]
+
+# SHAP plot 1: Create a new SHAP summary plot with selected features
+shap.summary_plot(
+    shap_values[:, feature_indices_1],
+    X_scaled[["em", "distance", "spectra_overlap", "sca_abs"]],
+    show=False,
+    feature_names=["em", "distance", "spectra_overlap", "sca_abs"]
+)
 
 fig, ax = plt.gcf(), plt.gca()
 fig.set_size_inches(6, 4)
@@ -112,14 +125,51 @@ for label in ax.get_yticklabels():
     label.set_fontsize(15)
 
 plt.tight_layout()
-plt.savefig("./shap_summary_E.png", dpi=600, format="png")
+plt.savefig("./shap_summary_em_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
 plt.close()
 
+
+# SHAP plot 2: Create a SHAP dependence plot for the selected features
+# Get indices for the three features we want to plot
+feature_indices_2 = [X_scaled.columns.get_loc(col) for col in ["distance", "spectra_overlap", "sca_abs"]]
+
+shap.summary_plot(
+    shap_values[:, feature_indices_2],
+    X_scaled[["distance", "spectra_overlap", "sca_abs"]],
+    show=False,
+    feature_names=["distance", "spectra_overlap", "sca_abs"]
+)
+
+fig, ax = plt.gcf(), plt.gca()
+fig.set_size_inches(6, 4)
+
+ax.set_xlabel("SHAP value", fontsize=15)
+ax.spines["right"].set_visible(True)
+ax.spines["left"].set_visible(True)
+ax.spines["top"].set_visible(True)
+ax.spines["right"].set_linewidth(1.5)
+ax.spines["top"].set_linewidth(1.5)
+ax.spines["bottom"].set_linewidth(1.5)
+ax.spines["left"].set_linewidth(1.5)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
+fig.axes[-1].yaxis.label.set_size(15)
+fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
+fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
+
+for label in ax.get_yticklabels():
+    label.set_fontsize(15)
+
+plt.tight_layout()
+plt.savefig("./shap_summary_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
+plt.close()
+
+
 # Create a mask for the upper triangle
-mask = np.triu(np.ones_like(X.corr(), dtype=bool))
+mask = np.triu(np.ones_like(X_scaled.corr(), dtype=bool))
 
 # Round correlation values to 2 decimal places and set very small values to 0
-corr_matrix = X.corr()
+corr_matrix = X_scaled.corr()
 corr_matrix = np.round(corr_matrix, 2)
 corr_matrix[np.abs(corr_matrix) < 0.01] = 0
 
