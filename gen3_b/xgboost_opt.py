@@ -9,6 +9,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
+from pymatviz import density_hexbin
+
 
 random.seed(42)
 
@@ -30,13 +32,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Creating the XGBRegressor model
 xgb_model = XGBRegressor()
-
-# Define the parameter grid
-# param_grid = {
-#     'n_estimators': [100, 400, 700, 1000, 1300, 1600, 1900],
-#     'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-#     'learning_rate': [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
-# }
 
 param_grid = {
     "n_estimators": [1000],
@@ -72,41 +67,51 @@ mse_optimized = mean_squared_error(y_test, y_pred_optimized)
 
 print(f"R2 on test set for E: {r2_optimized:.4f}, MSE: {mse_optimized:.4f}")
 
-# Plot the parity plot
-plt.figure(figsize=(8, 8))
-plt.scatter(y_test, y_pred_optimized, s=150)
-plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], "k--")
-plt.xlabel("Actual FE", fontsize=32)
-plt.ylabel("Predicted FE", fontsize=32)
-plt.title(
-    "XGBoost Prediction for FE\n$R^2$: {:.3f}, MSE: {:.3f}".format(
-        r2_optimized, mse_optimized
-    ),
-    fontsize=24,
+# Create parity plot
+fig, ax = plt.subplots(figsize=(8, 6))
+df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred_optimized})
+
+ax = density_hexbin(
+    x="Actual",
+    y="Predicted",
+    df=df,
+    ax=ax,
+    xlabel=r"Actual EF",
+    ylabel=r"Predicted EF",
+    best_fit_line=False,
+    gridsize=40,
 )
-plt.xticks(fontsize=24)
-plt.yticks(fontsize=24)
-plt.savefig("./parity_plot_FE.png", dpi=600, format="png")
+ax.set_aspect("auto")
+ax.set_box_aspect(1)
+plt.tight_layout()
+plt.savefig("xgboost_parity.png")
 plt.close()
 
 # shapley values
 explainer = shap.TreeExplainer(optimized_xgb_model)
 shap_values = explainer.shap_values(X_scaled)
 
-# Get indices of the features we want to plot
+X_scaled_renamed = X_scaled.rename(
+    columns=lambda fn: fn.replace("em", "EM")
+)
+
+print(X_scaled_renamed.columns)
 
 # SHAP plot 1: Create a new SHAP summary plot with selected features
-shap.summary_plot(
-    shap_values,
-    X_scaled,
+expl = shap.Explanation(values=shap_values,
+                        base_values=shap_values.mean(0),
+                        data=X_scaled.values,
+                        feature_names=['Separation \n distance', 'Spectrum \n overlap', 'Sca/Abs \n Ratio', 'EM'])
+
+# now call beeswarm with dot_size
+shap.plots.beeswarm(
+    expl,
     show=False,
-    feature_names=X_scaled.columns
 )
 
 fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(10, 6)  # Making the figure larger to accommodate all features
-
-ax.set_xlabel("SHAP value", fontsize=15)
+fig.set_size_inches(10, 6)
+ax.set_xlabel("SHAP value", fontsize=18)
 ax.spines["right"].set_visible(True)
 ax.spines["left"].set_visible(True)
 ax.spines["top"].set_visible(True)
@@ -114,16 +119,15 @@ ax.spines["right"].set_linewidth(1.5)
 ax.spines["top"].set_linewidth(1.5)
 ax.spines["bottom"].set_linewidth(1.5)
 ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
+plt.xticks(fontsize=18)
+plt.yticks(fontsize=18)
+fig.axes[-1].yaxis.label.set_size(18)
+fig.axes[-1].get_yticklabels()[0].set_fontsize(18)
+fig.axes[-1].get_yticklabels()[-1].set_fontsize(18)
 
 for label in ax.get_yticklabels():
-    label.set_fontsize(15)
+    label.set_fontsize(18)
 
-plt.tight_layout()
 plt.savefig("./shap_summary.png", dpi=600, format="png")
 plt.close()
 
