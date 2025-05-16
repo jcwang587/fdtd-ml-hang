@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
+from pymatviz import density_hexbin
 
 random.seed(42)
 
