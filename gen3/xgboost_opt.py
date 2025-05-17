@@ -16,8 +16,8 @@ random.seed(42)
 data = pd.read_csv("data/fe_merged.csv")
 
 # Separate features and target variable
-X = data.drop(columns=["fe"])
-y = data["fe"]
+X = data.drop(columns=["FE"])
+y = data["FE"]
 
 # Normalize the features
 scaler = StandardScaler()
@@ -30,13 +30,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Creating the XGBRegressor model
 xgb_model = XGBRegressor()
-
-# Define the parameter grid
-# param_grid = {
-#     'n_estimators': [100, 400, 700, 1000, 1300, 1600, 1900],
-#     'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-#     'learning_rate': [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
-# }
 
 param_grid = {
     "n_estimators": [1000],
@@ -72,140 +65,20 @@ mse_optimized = mean_squared_error(y_test, y_pred_optimized)
 
 print(f"R2 on test set for E: {r2_optimized:.4f}, MSE: {mse_optimized:.4f}")
 
-# Plot the parity plot
-plt.figure(figsize=(8, 8))
-plt.scatter(y_test, y_pred_optimized, s=150)
-plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], "k--")
-plt.xlabel("Actual FE", fontsize=32)
-plt.ylabel("Predicted FE", fontsize=32)
-plt.title(
-    "XGBoost Prediction for FE\n$R^2$: {:.3f}, MSE: {:.3f}".format(
-        r2_optimized, mse_optimized
-    ),
-    fontsize=24,
-)
-plt.xticks(fontsize=24)
-plt.yticks(fontsize=24)
-plt.savefig("./parity_plot_FE.png", dpi=600, format="png")
-plt.close()
-
-# shapley values
-explainer = shap.TreeExplainer(optimized_xgb_model)
-shap_values = explainer.shap_values(X_scaled)
-
-# Get indices of the features we want to plot
-feature_indices_1 = [X_scaled.columns.get_loc(col) for col in ["em", "distance", "spectra_overlap", "sca_abs"]]
-
-# SHAP plot 1: Create a new SHAP summary plot with selected features
-shap.summary_plot(
-    shap_values[:, feature_indices_1],
-    X_scaled[["em", "distance", "spectra_overlap", "sca_abs"]],
-    show=False,
-    feature_names=["em", "distance", "spectra_overlap", "sca_abs"]
-)
-
-fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(6, 4)
-
-ax.set_xlabel("SHAP value", fontsize=15)
-ax.spines["right"].set_visible(True)
-ax.spines["left"].set_visible(True)
-ax.spines["top"].set_visible(True)
-ax.spines["right"].set_linewidth(1.5)
-ax.spines["top"].set_linewidth(1.5)
-ax.spines["bottom"].set_linewidth(1.5)
-ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
-
-for label in ax.get_yticklabels():
-    label.set_fontsize(15)
-
-plt.tight_layout()
-plt.savefig("./shap_summary_em_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
-plt.close()
-
-
-# SHAP plot 2: Create a SHAP dependence plot for the selected features
-# Get indices for the three features we want to plot
-feature_indices_2 = [X_scaled.columns.get_loc(col) for col in ["distance", "spectra_overlap", "sca_abs"]]
-
-shap.summary_plot(
-    shap_values[:, feature_indices_2],
-    X_scaled[["distance", "spectra_overlap", "sca_abs"]],
-    show=False,
-    feature_names=["distance", "spectra_overlap", "sca_abs"]
-)
-
-fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(6, 4)
-
-ax.set_xlabel("SHAP value", fontsize=15)
-ax.spines["right"].set_visible(True)
-ax.spines["left"].set_visible(True)
-ax.spines["top"].set_visible(True)
-ax.spines["right"].set_linewidth(1.5)
-ax.spines["top"].set_linewidth(1.5)
-ax.spines["bottom"].set_linewidth(1.5)
-ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
-
-for label in ax.get_yticklabels():
-    label.set_fontsize(15)
-
-plt.tight_layout()
-plt.savefig("./shap_summary_distance_spectra_overlap_sca_abs.png", dpi=600, format="png")
-plt.close()
-
-
-# SHAP plot 3: Create a SHAP summary plot for all features
-shap.summary_plot(
-    shap_values,
-    X_scaled,
-    show=False,
-    feature_names=X_scaled.columns
-)
-
-fig, ax = plt.gcf(), plt.gca()
-fig.set_size_inches(10, 6)  # Making the figure larger to accommodate all features
-
-ax.set_xlabel("SHAP value", fontsize=15)
-ax.spines["right"].set_visible(True)
-ax.spines["left"].set_visible(True)
-ax.spines["top"].set_visible(True)
-ax.spines["right"].set_linewidth(1.5)
-ax.spines["top"].set_linewidth(1.5)
-ax.spines["bottom"].set_linewidth(1.5)
-ax.spines["left"].set_linewidth(1.5)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-fig.axes[-1].yaxis.label.set_size(15)
-fig.axes[-1].get_yticklabels()[0].set_fontsize(15)
-fig.axes[-1].get_yticklabels()[-1].set_fontsize(15)
-
-for label in ax.get_yticklabels():
-    label.set_fontsize(15)
-
-plt.tight_layout()
-plt.savefig("./shap_summary_all_features.png", dpi=600, format="png")
-plt.close()
-
-# Create a mask for the upper triangle
-mask = np.triu(np.ones_like(X_scaled.corr(), dtype=bool))
-
 # Round correlation values to 2 decimal places and set very small values to 0
 corr_matrix = X_scaled.corr()
 corr_matrix = np.round(corr_matrix, 2)
 corr_matrix[np.abs(corr_matrix) < 0.01] = 0
+np.fill_diagonal(corr_matrix.values, 1.0)
+
+# Create a mask for the upper triangle
+mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
 
 # Plot the correlation matrix with the mask
 sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", mask=mask, fmt=".2f")
+
+# set tight layout
+plt.tight_layout()
+
 plt.savefig("./corr_matrix.png", dpi=600, format="png")
 plt.close()
